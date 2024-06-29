@@ -1,0 +1,56 @@
+token based authentication
+--------------------------
+-> token is generated from authentication server after successful authentication.
+-> server validates the request and authorize the access.
+
+jwt token structure 
+-------------------
+-> it contains three parts seperated by dots.
+-> header.payload.signature
+
+header 
+------
+it contains typ : jwt and alg : algorithm to be used
+
+example : {
+  "alg": "HS256",
+  "typ": "JWT"
+}
+
+payload
+-------
+it contains claims
+there are three types of claims : registered, private and public
+
+registered
+recommeded claims
+has set of predefined claims , like issuer, expiration time , subject, audience and others
+
+private and public for custom claims
+
+example : {
+  "sub": "1234567890",
+  "name": "John Doe",
+  "admin": true
+}
+
+signature
+---------
+to create the signature part yo have to take the encoded header, encoded payload , secret and algorithm specified in header to sign that
+
+HMACSHA256(
+  base64UrlEncode(header) + "." +
+  base64UrlEncode(payload),
+  secret)
+
+how it works?
+--------------
+The application or client requests authorization to the authorization server.
+This is performed through one of the different authorization flows. 
+For example, a typical OpenID Connect compliant web application will go through the /oauth/authorize endpoint using the authorization code flow.
+When the authorization is granted, the authorization server returns an access token to the application.
+The application uses the access token to access a protected resource (like an API).
+
+
+
+

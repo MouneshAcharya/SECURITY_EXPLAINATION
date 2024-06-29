@@ -1,0 +1,35 @@
+Suppose you are building a monolithic application with a backend and frontend packed together. For securing some private routes you are 
+using form-based and session-based login.
+
+A new requirement comes that you also need to expose some REST APIs for a third-party application or mobile application. Now for the REST APIs,
+you can not use session-based security you need to use a token-based security mechanism.
+
+
+steps:
+enable the spring security by adding below dependency 
+<dependency>
+   <groupId>org.springframework.boot</groupId>
+   <artifactId>spring-boot-starter-security</artifactId>
+</dependency>
+
+create a config class by extending WebSecurityConfigurerAdapter and overridethe below methods
+authenticationManagerBean() — to get Bean of AuthenticationManager
+configure(HttpSecurity httpSecurity) — To allow or restrict any endpoint for authentication.
+annotate the class with - @EnableWebSecurity
+
+In case of unauthorized access, we can customize the error message in response by implementing an interface AuthenticationEntryPoint.
+spring bean class with implementing AuthenticationEntryPoint
+
+For each request to the application, token validation and setting the authentication in context will be done in a customized filter 
+JwtRequestFilter.java added before UsernamePasswordAuthenticationFilter
+
+The credentials passed in the authentication endpoint will be validated in UserDetailsService bean
+
+The token generation can be customized - JwtTokenUtil 
+
+above incoked by - JwtRequestFilter 
+
+
+
+
+
