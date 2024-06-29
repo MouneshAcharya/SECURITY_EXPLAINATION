@@ -1,0 +1,197 @@
+https://www.marcobehler.com/guides/spring-security#:~:text=What%20is%20Spring%20Security%20and%20how%20does%20it,well%20as%20with%20standards%20like%20OAuth2%20or%20SAML.
+
+spring provides spring library to provide the core feature of the security like authorization, authetication
+
+to activate spring security in our application we will add spring security starter
+once we add this depenedency we can not execute post request 
+if we laucnh the app then it will auto generate login pages
+so whole application is on lock down
+
+spring security is nopthing bu bunch pf servlet filter which helps us to add the authorization and authentication to our application.
+this security supports for standalone , web applciation and reactive applciation
+
+before unserdtanding spring security we need to unserdtand 
+authentication
+authorization
+servlet filter
+
+
+authentication : 
+our application needs to validated the user using username and password
+in this as soon as users login he can access all the features of the web application
+it is for simpler application
+
+if we want to restrict the user to access some part of the feautes of our web application
+we need to provide some permission by authorizing the users
+
+authorization
+we need to check the permission of the authenticated user i.e we need to authorize the user
+
+servlet filter
+basically any spring web applciation is a one servlet filter (Dispatcherservlet), that redirects incoming http request to your controller / restcontroller
+
+optimmally authentication and authorization should be done before request hits your controllers
+
+luckily there is  way to do this in java web world
+we can put filters infront of the servlets
+we can think of writing security filter and configure it in your tomcat, to filter http request before it hits to controller (our servlet)
+
+security filter has roughly 4 tasks
+1)extract username nd passwordfrom the request it could be via basic auth header/cookie/form fields
+2)validate the username and password against something like database[id no unauthorized]
+3)check if authenticated user has authorize to access requested uri [if no forbidden]
+4)if above are passed then request can go throught your dispatcher servlet i.e your controller
+
+import javax.servlet.*;
+import javax.servlet.http.HttpFilter;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+
+public class SecurityServletFilter extends HttpFilter {
+
+    @Override
+    protected void doFilter(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws IOException, ServletException {
+
+        UsernamePasswordToken token = extractUsernameAndPasswordFrom(request);  // (1)
+
+        if (notAuthenticated(token)) {  // (2)
+            // either no or wrong username/password
+            // unfortunately the HTTP status code is called "unauthorized", instead of "unauthenticated"
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // HTTP 401.
+            return;
+        }
+
+        if (notAuthorized(token, request)) { // (3)
+            // you are logged in, but don't have the proper rights
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN); // HTTP 403
+            return;
+        }
+
+        // allow the HttpRequest to go to Spring's DispatcherServlet
+        // and @RestControllers/@Controllers.
+        chain.doFilter(request, response); // (4)
+    }
+
+    private UsernamePasswordToken extractUsernameAndPasswordFrom(HttpServletRequest request) {
+        // Either try and read in a Basic Auth HTTP Header, which comes in the form of user:password
+        // Or try and find form login request parameters or POST bodies, i.e. "username=me" & "password="myPass"
+        return checkVariousLoginOptions(request);
+    }
+
+
+    private boolean notAuthenticated(UsernamePasswordToken token) {
+        // compare the token with what you have in your database...or in-memory...or in LDAP...
+        return false;
+    }
+
+    private boolean notAuthorized(UsernamePasswordToken token, HttpServletRequest request) {
+       // check if currently authenticated user has the permission/role to access this request's /URI
+       // e.g. /admin needs a ROLE_ADMIN , /callcenter needs ROLE_CALLCENTER, etc.
+       return false;
+    }
+}
+
+when we add the security dependency and run the application we will see the below filter chain in the console log
+DefaultSecurityFilterChain
+WebAsyncManagerIntegrationFilter
+SecurityContextPersistenceFilter
+HeaderWriterFilter
+CsrfFilter
+LogoutFilter
+UsernamePasswordAuthenticationFilter
+DefaultLoginPageGeneratingFilter
+DefaultLogoutPageGeneratingFilter
+BasicAuthenticationFilter 
+RequestCacheAwareFilter
+SecurityContextHolderAwareRequestFilter
+AnonymousAuthenticationFilter
+SessionManagementFilter
+ExceptionTranslationFilter
+FilterSecurityInterceptor
+
+request will go through all the filters before your request hits your rest controlller
+
+spring security provides all the neccesary features required by the security
+so we need to learn how to use them
+
+to configure the spring security we need to create a config class by
+annotating with @EnableWebSecurity
+extends with  WebSecurityConfigurerAdapter this provides configuration methods
+
+typical WebSecurityConfigurerAdapter looks like
+@Configuration
+@EnableWebSecurity // (1)
+public class WebSecurityConfig extends WebSecurityConfigurerAdapter { // (1)
+
+  @Override
+  protected void configure(HttpSecurity http) throws Exception {  // (2)
+      http
+        .authorizeRequests()
+          .antMatchers("/", "/home").permitAll() // (3)
+          .anyRequest().authenticated() // (4)
+          .and()
+       .formLogin() // (5)
+         .loginPage("/login") // (5)
+         .permitAll()
+         .and()
+      .logout() // (6)
+        .permitAll()
+        .and()
+      .httpBasic(); // (7)
+  }
+}
+
+by overiding adapters configure(HttpSecurity) method we will get little nice DSL with which we can configure your filterchain
+
+all requests going to / and /home are allowed
+any other request needs to be authenticated first
+we are allowing login page proivded by spring, anyone can able to access the login and provide the username and password 
+the same goes to logout page
+on top of this we are allowing basic auth 
+
+WebSecurityConfigurerAdapter has implementation like this
+public abstract class WebSecurityConfigurerAdapter implements
+		WebSecurityConfigurer<WebSecurity> {
+        protected void configure(HttpSecurity http) throws Exception {
+            http
+                .authorizeRequests()
+                    .anyRequest().authenticated()  // (1)
+                    .and()
+                .formLogin().and()   // (2)
+                .httpBasic();  // (3)
+        }
+}
+
+to access any uri - anyRequest()
+to access form login - formLogin()
+to access http basic authentication - httpBasic()
+till now We learned that Spring Security consists of a couple of filters that you configure with a WebSecurityConfigurerAdapter @Configuration class.
+
+but question is, how authentication works with Spring Security?
+
+spring security authentication 3 scenarios
+we can extract the username and password but we need to autheticate against what?
+1)database
+2)3rd party rest api for identity management eg:atlassian crown
+3)oauth2 (login with google/twitter/instagram) likely in combination with jwt
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
