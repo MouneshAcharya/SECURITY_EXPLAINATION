@@ -176,7 +176,7 @@ we can extract the username and password but we need to autheticate against what
 2)3rd party rest api for identity management eg:atlassian crown
 3)oauth2 (login with google/twitter/instagram) likely in combination with jwt
 
-
+https://github.com/atquil/spring-security/tree/JWT-oauth2
 
 
 
