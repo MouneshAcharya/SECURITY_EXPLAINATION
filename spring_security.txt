@@ -177,6 +177,7 @@ we can extract the username and password but we need to autheticate against what
 3)oauth2 (login with google/twitter/instagram) likely in combination with jwt
 
 https://github.com/atquil/spring-security/tree/JWT-oauth2
+https://www.youtube.com/watch?v=Wg6qWcDpoZU&t=1058s
 
 
 
